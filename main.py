@@ -41,7 +41,7 @@ async def chatWebSocket(Websocket: WebSocket):
                     if n8n_response.status_code == 200:
                         # Echo n8n response to WebSocket client
                         bot_n8n = ""
-                        for chunk in n8n_response.aiter_text():
+                        async for chunk in n8n_response.aiter_text():
                               await Websocket.send_text(chunk)
                               bot_n8n += chunk
                         chat_responses.append(f'N8N Asstance: {bot_n8n}')
