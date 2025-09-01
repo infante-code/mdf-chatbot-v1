@@ -5,7 +5,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 import os
 from dotenv import load_dotenv
-import httpx
+import httpx #change 3
 
 load_dotenv()
 
@@ -13,7 +13,7 @@ app = FastAPI()
 htmlTemp = Jinja2Templates(directory="templates")
 
 
-# n8n webhook URL
+# n8n webhook URL - changes 1
 N8N_WEBHOOK_URL = os.getenv("N8N_WEBHOOK_URL", "N8N_WEBHOOK_URL")
 
 # No need for this '''export OPEN_API_KEY=<you key>''' cause the function below describe the api key
@@ -34,7 +34,7 @@ async def chatWebSocket(Websocket: WebSocket):
           chat_log_history.append({'role': 'user', 'content': user_input})
 
 
-          # N8N Webhook TRY and EXCEPT line code
+          # N8N Webhook TRY and EXCEPT line code - change 2
           try:
                async with httpx.AsyncClient() as client:
                     n8n_response = await client.post(N8N_WEBHOOK_URL, json={"message": user_input}, timeout=None)

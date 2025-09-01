@@ -41,6 +41,33 @@
                 bottom: 3%;
                 width: 95%;
             }
+
+            /* ===== ADD: typing bubble + animated dots ===== */
+            .chat-message.typing {
+              background-color: #f1f1f1;
+              border-radius: 5px;
+              padding: 6px 10px;
+              width: fit-content;
+              display: inline-flex;
+              gap: 6px;
+              align-items: center;
+              margin-bottom: 8px;
+            }
+            .typing .dot {
+              width: 6px;
+              height: 6px;
+              border-radius: 50%;
+              background: #9aa0a6;
+              display: inline-block;
+              animation: bounce 1.3s infinite ease-in-out;
+            }
+            .typing .dot:nth-child(2) { animation-delay: .15s; }
+            .typing .dot:nth-child(3) { animation-delay: .3s; }
+            @keyframes bounce {
+              0%, 80%, 100% { transform: scale(0.6); opacity: .4; }
+              40% { transform: scale(1); opacity: 1; }
+            }
+            /* ============================================= */
          </style>
     </head>
     <body>
@@ -83,61 +110,78 @@
             }
             var ws = new WebSocket(websocketString);
 
-
             var sendButton = document.getElementById("sendButton");
             var userInput = document.getElementById("userInput");
             var chatHistory = document.getElementById("chatHistory");
             var lastUserMessageDiv = null; // Keep track of the last user message div
             var isNewUserInput = true; // Flag to track when a new user input happens
 
+            // ===== ADD: typing indicator helpers (non-destructive) =====
+            let typingIndicatorEl = null;
+            function showTyping() {
+              if (typingIndicatorEl) return;
+              typingIndicatorEl = document.createElement("div");
+              typingIndicatorEl.className = "chat-message ai-response typing";
+              typingIndicatorEl.innerHTML = '<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
+              chatHistory.appendChild(typingIndicatorEl);
+              chatHistory.scrollTop = chatHistory.scrollHeight;
+            }
+            function hideTyping() {
+              if (typingIndicatorEl && typingIndicatorEl.parentNode) {
+                typingIndicatorEl.parentNode.removeChild(typingIndicatorEl);
+              }
+              typingIndicatorEl = null;
+            }
+            // ===========================================================
+
+            ws.onopen = function() { hideTyping(); };
+            ws.onerror = function() { hideTyping(); };
+            ws.onclose = function() { hideTyping(); };
 
             ws.onmessage = function(event) {
                 var message = event.data.trim(); // Trim whitespace from the message
 
+                // ADD: first chunk received -> hide typing bubble
+                hideTyping();
 
                 // Check if it's a continuation of the AI's last message or a new one
                 if (lastUserMessageDiv && !isNewUserInput) {
-                var shouldAddSpace = true;
-                var noPrependSpaceChars = [',', '.', '!', '?', ';', ':', "'"];
-
-
-                if (noPrependSpaceChars.includes(message.charAt(0))) {
-                    shouldAddSpace = false;
-                }
-
-
-                lastUserMessageDiv.textContent += (shouldAddSpace ? " " : "") + message;
+                  var shouldAddSpace = true;
+                  var noPrependSpaceChars = [',', '.', '!', '?', ';', ':', "'"];
+                  if (noPrependSpaceChars.includes(message.charAt(0))) {
+                      shouldAddSpace = false;
+                  }
+                  lastUserMessageDiv.textContent += (shouldAddSpace ? " " : "") + message;
                 } else {
-                // It's either a new user input or the first chunk of AI response for the latest input
-                var messageDiv = document.createElement("div");
-                messageDiv.className = "chat-message ai-response"; // Assign class for styling
-                messageDiv.textContent = message;
-                chatHistory.appendChild(messageDiv);
-                lastUserMessageDiv = messageDiv; // Update the reference to the last message div
-                isNewUserInput = false; // Reset the flag as the AI response starts
+                  // It's either a new user input or the first chunk of AI response for the latest input
+                  var messageDiv = document.createElement("div");
+                  messageDiv.className = "chat-message ai-response"; // Assign class for styling
+                  messageDiv.textContent = message;
+                  chatHistory.appendChild(messageDiv);
+                  lastUserMessageDiv = messageDiv; // Update the reference to the last message div
+                  isNewUserInput = false; // Reset the flag as the AI response starts
                 }
             };
-
 
             sendButton.onclick = function() {
                 var message = userInput.value.trim();
                 if (message) {
-                var userInputDiv = document.createElement("div");
-                userInputDiv.className = "chat-message user-input"; // Use user-input class for user messages
-                userInputDiv.textContent = message;
-                chatHistory.appendChild(userInputDiv);
+                  var userInputDiv = document.createElement("div");
+                  userInputDiv.className = "chat-message user-input"; // Use user-input class for user messages
+                  userInputDiv.textContent = message;
+                  chatHistory.appendChild(userInputDiv);
 
+                  chatHistory.scrollTop = chatHistory.scrollHeight;
 
-                chatHistory.scrollTop = chatHistory.scrollHeight;
+                  // ADD: show typing bubble while awaiting streamed chunks
+                  showTyping();
 
-
-                ws.send(message);
-                userInput.value = "";
-                isNewUserInput = true; // Set the flag as it's a new user input
-                lastUserMessageDiv = null; // Prepare for the next message
+                  ws.send(message);
+                  userInput.value = "";
+                  isNewUserInput = true; // Set the flag as it's a new user input
+                  lastUserMessageDiv = null; // Prepare for the next message
                 }
             };
-
         </script>
     </body>
 </html>
