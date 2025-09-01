@@ -41,6 +41,8 @@ async def chatWebSocket(Websocket: WebSocket):
                     if n8n_response.status_code == 200:
                         # Echo n8n response to WebSocket client
                         await Websocket.send_text(f"[n8n]: {n8n_response.text}")
+                        chat_responses.append(n8n_response)
+
                     else:
                         await Websocket.send_text(f"[n8n ERROR {n8n_response.status_code}]: {n8n_response.text}")
           except Exception as e:
