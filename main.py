@@ -37,11 +37,14 @@ async def chatWebSocket(Websocket: WebSocket):
           # N8N Webhook TRY and EXCEPT line code
           try:
                async with httpx.AsyncClient() as client:
-                    n8n_response = await client.post(N8N_WEBHOOK_URL, json={"message": user_input})
+                    n8n_response = await client.post(N8N_WEBHOOK_URL, json={"message": user_input}, timeout=None)
                     if n8n_response.status_code == 200:
                         # Echo n8n response to WebSocket client
-                        await Websocket.send_text(f"[n8n]: {n8n_response.text}")
-                        chat_responses.append(n8n_response)
+                        bot_n8n = ""
+                        for chunk in n8n_response.aiter_text():
+                              bot_n8n += chunk
+                              await Websocket.send_text(chunk)
+                        chat_responses.append(f'N8N Asstance: {bot_n8n}')
 
                     else:
                         await Websocket.send_text(f"[n8n ERROR {n8n_response.status_code}]: {n8n_response.text}")
@@ -51,7 +54,7 @@ async def chatWebSocket(Websocket: WebSocket):
 
 
 
-
+          # Normal GPT reponse in stream
           try:
                reponse = gpt.chat.completions.create(
                     model='gpt-3.5-turbo',
