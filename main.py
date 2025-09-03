@@ -5,7 +5,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 import os
 from dotenv import load_dotenv
-import httpx #change 3
+import httpx #change 3 # change 4 is on the .env file
 
 load_dotenv()
 
